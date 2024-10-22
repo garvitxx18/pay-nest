@@ -6,145 +6,174 @@ from selenium.webdriver.support.ui import Select
 import time
 from db import connect
 from query import getOTP, getPhoneNumber
-
-try:
-    driver = webdriver.Chrome()
-    driver.get("https://www.flipkart.com/mivi-play-5-w-portable-bluetooth-speaker/p/itmb0a3cf7d68909?pid=ACCG25T4GTENPNFN&lid=LSTACCG25T4GTENPNFNZY7YW9&marketplace=FLIPKART&store=0pm%2F0o7&srno=b_1_1&otracker=browse&fm=organic&iid=en_wZB5SPAKDvwMwdu0EUpkf6AQQCaD9Jo1W14usB0IwvpqeOormxFw-PdbFDtXFIzK-qKY2W4avqlWyKfGzhcZIQ%3D%3D&ppt=browse&ppn=browse&ssid=n4shli00u80000001729421680932")
-
-    time.sleep(6)
-
-    # Click the 'Buy Now' button
-    buy_now_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'QqFHMw') and contains(@class, '_7Pd1Fp')]"))
-    )
-    buy_now_button.click()
-
-    # Input phone number
-    phone_number = "9509652141"  # Assuming this retrieves the phone number for the given ID
-    phone_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//input[@type='text' and contains(@class, 'r4vIwl')]"))
-    )
-    phone_input.clear()
-    phone_input.send_keys(phone_number)
+from app import consume_otp_endpoint
+import aiohttp
+import asyncio
 
 
-    # Click 'Continue' button
-    continue_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'QqFHMw') and contains(@class, '_7Pd1Fp')]"))
-    )
-    continue_button.click()
 
-    # Wait for the OTP input field to appear
-    otp_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//input[@maxlength='6' and @type='text']"))
-    )
+async def fetch_platorm_otp():
+    url = "http://127.0.0.1:5000/consume-otp"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            otp_result = await response.text()
+            return otp_result
 
-    # Introduce a delay of 60 seconds to allow the OTP to be generated
-    print("Waiting for OTP to be generated...")
-    time.sleep(40)  # Wait for 60 seconds before fetching the OTP
-    db=connect()
-    mycursor = db.cursor()
-    mycursor.execute(getOTP(), (1,)) 
-    otp_result = mycursor.fetchall()  
+async def fetch_credit_otp():
+    url = "http://127.0.0.1:5000/consume-cc-otp"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            otp_result = await response.text()
+            return otp_result
 
-    mycursor.execute("select * from card_details_table;") 
-    card_data = mycursor.fetchall()
-    card_details=card_data[0]  
+async def main():
+    try:
+        driver = webdriver.Chrome()
+        driver.get("https://www.flipkart.com/apple-iphone-15-pro-black-titanium-512-gb/p/itm6cec19f8ee1c3?pid=MOBGTAGPKHHNRHXH&lid=LSTMOBGTAGPKHHNRHXHRO9D8C&marketplace=FLIPKART&q=iphone+15+pro&store=tyy%2F4io&srno=s_1_1&otracker=search&otracker1=search&iid=ff10b13c-32fb-4df8-a2b0-63a3e0b508fe.MOBGTAGPKHHNRHXH.SEARCH&ssid=1hpje91nvk0000001729626619675&qH=c9de95b3b911a866")
+        time.sleep(5)
 
-    if otp_result:
-        otp_value = otp_result[0]
-        print("OTP retrieved:", otp_value)
-
-        # Input OTP
-        otp_input.clear()
-        otp_input.send_keys(otp_value)
-
-        # Click 'Login' button
-        login_button = WebDriverWait(driver, 10).until(
+        # Click the 'Buy Now' button
+        buy_now_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'QqFHMw') and contains(@class, '_7Pd1Fp')]"))
         )
-        login_button.click()
+        buy_now_button.click()
 
-        deliver_here_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Deliver Here')]"))
+        # Input phone number
+        phone_number = "9123924829"  # Assuming this retrieves the phone number for the given ID
+        phone_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@type='text' and contains(@class, 'r4vIwl')]"))
         )
-        deliver_here_button.click()
-        time.sleep(5)
-        print("66")
-        continue_button_2 = WebDriverWait(driver, 10).until(
+        phone_input.clear()
+        phone_input.send_keys(phone_number)
+
+
+        # Click 'Continue' button
+        continue_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'QqFHMw') and contains(@class, '_7Pd1Fp')]"))
         )
-        continue_button_2.click()
-        print("71")
-        time.sleep(5)
+        continue_button.click()
+
+        # Wait for the OTP input field to appear
+        otp_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@maxlength='6' and @type='text']"))
+        )
+
+        # Introduce a delay of 60 seconds to allow the OTP to be generated
+        print("Waiting for OTP to be generated...")
+        # Wait for 60 seconds before fetching the OTP
         
+        otp_result = await fetch_platorm_otp()
+        print(otp_result)
+        if otp_result:
+            print("OTP retrieved:", otp_result)
 
-        wait = WebDriverWait(driver, 10)
-        accept_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Accept & Continue']")))
+            # Input OTP
+            otp_input.clear()
+            otp_input.send_keys(otp_result)
+
+            # Click 'Login' button
+            login_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'QqFHMw') and contains(@class, '_7Pd1Fp')]"))
+            )
+            login_button.click()
+
+            deliver_here_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Deliver Here')]"))
+            )
+            deliver_here_button.click()
+
+            continue_button_2 = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'QqFHMw') and contains(@class, '_7Pd1Fp')]"))
+            )
+            continue_button_2.click()
+            print("71")
+            
+
+            wait = WebDriverWait(driver, 10)
+            accept_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Accept & Continue']")))
+            
+            # Click the "Accept & Continue" button
+            accept_button.click()
+
+            print("76")
+            time.sleep(5)
+
+            span_element = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//span[text()='Credit / Debit / ATM Card']"))
+            )
+
+            # Click the span
+            span_element.click()
+            time.sleep(5)
+            cvv_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@maxlength='4' and @type='password']"))
+            )
+            cvv_input.clear() 
+            cvv_input.send_keys("123")
+
+            time.sleep(2)
+            card_number = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@maxlength='16' and @type='text']"))
+            )
+            card_number.clear()
+            card_number.send_keys("5334670041809605")      
+
+            time.sleep(2)
+            month_dropdown = Select(driver.find_element(By.XPATH, "//select[@name='month']"))
+            year_dropdown = Select(driver.find_element(By.XPATH, "//select[@name='year']"))  # Update 'year' to match the actual name or locator for the year dropdown
+
+            # Select the month and year by value
+            month_dropdown.select_by_value("01")
+            time.sleep(2)
+            year_dropdown.select_by_value("29")  
+            time.sleep(2)
+
+            pay_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'QqFHMw') and contains(@class, '_7Pd1Fp')]"))
+            )
+            pay_button.click()
+            time.sleep(2)
+
+            maybe_later = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Maybe later']")))
+            maybe_later.click()
+            time.sleep(2)
+            time.sleep(15)
+
+            cc_otp = await fetch_credit_otp()
+            print(cc_otp)
+            credit_otp = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@type='password' and @name='otpValue']"))
+            )
+            credit_otp.clear()
+            credit_otp.send_keys(cc_otp)
+
+            time.sleep(4)
+            confirm = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Confirm']")))
+            confirm.click()
+
+            time.sleep(20)
+            
+
+
         
-        # Click the "Accept & Continue" button
-        accept_button.click()
-
-        print("76")
-        time.sleep(5)
-        span_element = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//span[text()='Credit / Debit / ATM Card']"))
-        )
-
-        # Click the span
-        span_element.click()
-        time.sleep(5)
-
-        cvv_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//input[@maxlength='4' and @type='password']"))
-        )
-        cvv_input.clear() 
-        cvv_input.send_keys("123")
+        
+        else:
+            print("No OTP found for the given ID.")
 
 
-        card_number = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//input[@maxlength='16' and @type='text']"))
-        )
-        card_number.clear()
-        card_number.send_keys("4799598795097161")      
+        time.sleep(6)
 
-        time.sleep(2)
-        month_dropdown = Select(driver.find_element(By.XPATH, "//select[@name='month']"))
-        year_dropdown = Select(driver.find_element(By.XPATH, "//select[@name='year']"))  # Update 'year' to match the actual name or locator for the year dropdown
+    except Exception as e:
+        print("An error occurred:", e)
 
-        # Select the month and year by value
-        month_dropdown.select_by_value("11")
-        time.sleep(2)
-        year_dropdown.select_by_value("30")  
-        time.sleep(2)
-
-        pay_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'QqFHMw') and contains(@class, '_7Pd1Fp')]"))
-        )
-        pay_button.click()
-        time.sleep(5)
-
-        maybe_later = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Maybe later']")))
-        maybe_later.click()
+    finally:
+        driver.quit()
 
 
-        time.sleep(10)
-        credit_otp = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//input[@maxlength='6' and @type='password']"))
-        )
-        credit_otp.clear()
-        credit_otp.send_keys("696969")
-        time.sleep(5)
-    
-    else:
-        print("No OTP found for the given ID.")
+# Run the asynchronous event loop
+if __name__ == "__main__":
+    asyncio.run(main())
 
 
-    time.sleep(6)
-    mycursor.close()
 
-except Exception as e:
-    print("An error occurred:", e)
 
-finally:
-    driver.quit()
